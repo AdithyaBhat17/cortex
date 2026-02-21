@@ -1,36 +1,166 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CORTEX
 
-## Getting Started
+Your biometric command center. WHOOP + Withings in one dashboard.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+    _____ ____  ____  _____ _______  __
+   / ____/ __ \|  _ \|_   _|  ____\ \/ /
+  | |   | |  | | |_) | | | | |__   \  /
+  | |   | |  | |  _ <  | | |  __|  /  \
+  | |___| |__| | |_) | | | | |____/ /\ \
+   \_____\____/|____/ |___|______/_/  \_\
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Cortex aggregates health data from **WHOOP** (recovery, strain, sleep, heart rate, SpO2, skin temperature, respiratory rate) and **Withings** (weight, body composition, BMI) into a unified, real-time dashboard with interactive charts and trend analysis.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How It Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
++-----------+                              +------------------+
+|           |  OAuth 2.0                   |                  |
+|   WHOOP   |<---------------------------->|                  |
+|   API     |  cycles, recovery,           |                  |
+|           |  sleep, workouts             |     CORTEX       |
++-----------+                              |                  |
+                                           |   Next.js App    |
++-----------+                              |   + Supabase DB  |
+|           |  OAuth 2.0                   |                  |
+| Withings  |<---------------------------->|                  |
+|   API     |  weight, body comp,          |                  |
+|           |  fat, muscle, BMI            +--------+---------+
++-----------+                                       |
+                                                    |
+                                            +-------v-------+
+                                            |    Browser     |
+                                            |  (Dashboard)   |
+                                            +---------------+
+```
 
-## Learn More
+1. **Sign in** with Google via Supabase Auth
+2. **Connect** WHOOP and/or Withings via OAuth
+3. **Data syncs** automatically (daily cron) or manually (sync button)
+4. **Dashboard** renders 15+ interactive charts with date range filtering
 
-To learn more about Next.js, take a look at the following resources:
+## Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| UI | React 19, Tailwind CSS 4 |
+| Charts | Recharts 3 |
+| State | React Query + Zustand |
+| Database | Supabase (PostgreSQL + Auth) |
+| Deployment | Vercel |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Quick Start
 
-## Deploy on Vercel
+```bash
+# 1. Clone and install
+git clone <repo-url> cortex && cd cortex
+npm install
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# 2. Set up environment
+cp .env.example .env.local
+# Fill in Supabase, WHOOP, and Withings credentials
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 3. Run database migrations
+# (paste contents of supabase/migrations/*.sql into Supabase SQL editor)
+
+# 4. Start dev server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+See [docs/setup.md](docs/setup.md) for the full setup guide.
+
+## Dashboard Preview
+
+The dashboard displays 7 summary metrics with sparklines at the top, followed by categorized chart sections:
+
+```
++------------------------------------------------------------------+
+|  CORTEX          Dashboard  Connections    [7D 14D 30D] [sync] [+]|
++------------------------------------------------------------------+
+| Recovery | Sleep | Strain | Weight | Muscle | Body Fat |   BMI   |
+|   78%    |  85%  |  12.4  | 75.2kg | 35.1kg |  18.5%  |  23.4   |
++------------------------------------------------------------------+
+|                                                                  |
+|  RECOVERY & VITALS                                               |
+|  +------------------+ +----------------+ +-------------------+   |
+|  | Recovery Score   | | HRV (RMSSD)    | | Resting Heart Rate|   |
+|  |     [chart]      | |    [chart]     | |      [chart]      |   |
+|  +------------------+ +----------------+ +-------------------+   |
+|                                                                  |
+|  SLEEP                                                           |
+|  +------------------+ +----------------+ +-------------------+   |
+|  | Sleep Performance| | Sleep Stages   | | Sleep Duration    |   |
+|  |     [chart]      | |    [chart]     | |      [chart]      |   |
+|  +------------------+ +----------------+ +-------------------+   |
+|                                                                  |
+|  ACTIVITY & STRAIN                                               |
+|  +------------------+ +----------------+ +-------------------+   |
+|  | Daily Strain     | | Calories       | | SpO2              |   |
+|  +------------------+ +----------------+ +-------------------+   |
+|                                                                  |
+|  WORKOUTS                                                        |
+|  +----------------------------------+ +-------------------+      |
+|  | Workout Strain                   | | Workout Heart Rate|      |
+|  +----------------------------------+ +-------------------+      |
+|                                                                  |
+|  BODY & METABOLISM                                               |
+|  +------------------+ +----------------+ +-------------------+   |
+|  | Weight           | | Skin Temp      | | Respiratory Rate  |   |
+|  +------------------+ +----------------+ +-------------------+   |
+|  +----------------------------------+ +-------------------+      |
+|  | Body Composition (fat/muscle/bone)| |       BMI         |     |
+|  +----------------------------------+ | 23.4  [Normal]    |     |
+|                                       | [====o==========] |     |
+|                                       +-------------------+     |
++------------------------------------------------------------------+
+```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [docs/setup.md](docs/setup.md) | Full setup guide (Supabase, WHOOP, Withings, environment) |
+| [docs/architecture.md](docs/architecture.md) | System architecture, data flows, design decisions |
+| [docs/database.md](docs/database.md) | Database schema, ER diagram, RLS policies, indexes |
+| [docs/api.md](docs/api.md) | API endpoint reference with request/response examples |
+| [docs/components.md](docs/components.md) | Component hierarchy, chart list, data hooks |
+| [docs/deployment.md](docs/deployment.md) | Vercel deployment, cron jobs, custom domains |
+
+## Project Structure
+
+```
+src/
++-- app/                    # Next.js App Router
+|   +-- (auth)/             #   Login, signup, OAuth callback
+|   +-- api/                #   API routes (auth, data, sync, cron)
+|   +-- dashboard/          #   Dashboard page + connect page
++-- components/
+|   +-- charts/             #   15 chart components + BMI card
+|   +-- layout/             #   Header, summary strip
+|   +-- ui/                 #   Card, Skeleton, DatePicker, Logo
++-- lib/
+|   +-- api/                #   WHOOP & Withings API clients
+|   +-- hooks/              #   React Query data hooks
+|   +-- supabase/           #   Supabase client factories
+|   +-- sync/               #   Sync orchestration
++-- types/                  #   TypeScript definitions
+```
+
+## Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Production build
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+## License
+
+Private project. All rights reserved.

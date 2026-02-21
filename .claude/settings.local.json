@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next build)",
+      "Bash(npx supabase:*)",
+      "WebSearch",
+      "WebFetch(domain:developer.whoop.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:skills.sh)"
+    ]
+  }
+}
