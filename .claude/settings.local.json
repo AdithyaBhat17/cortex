@@ -6,7 +6,12 @@
       "WebSearch",
       "WebFetch(domain:developer.whoop.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:skills.sh)"
+      "WebFetch(domain:skills.sh)",
+      "Bash(which vercel 2>/dev/null || npx vercel --version 2>/dev/null)",
+      "Bash(cd:*)",
+      "Bash(cd /f/cortex && vercel link --yes 2>&1)",
+      "Bash(curl:*)",
+      "Bash(nslookup:*)"
     ]
   }
 }
