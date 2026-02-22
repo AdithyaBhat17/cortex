@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return response;
     }
+    console.error("Auth code exchange failed:", error.message);
   }
 
   return NextResponse.redirect(`${origin}/login?error=Could+not+authenticate`);

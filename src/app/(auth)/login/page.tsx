@@ -2,8 +2,13 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { CortexLogo } from "@/components/ui/cortex-logo";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+
   async function handleGoogleSignIn() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
@@ -47,6 +52,17 @@ export default function LoginPage() {
         >
           Biometric Command Center
         </p>
+
+        {/* Error message */}
+        {error && (
+          <p
+            className="mt-6 animate-login-reveal rounded-md border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-400"
+            style={{ animationDelay: "200ms" }}
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
 
         {/* Divider */}
         <div
@@ -93,5 +109,13 @@ export default function LoginPage() {
         </p>
       </footer>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

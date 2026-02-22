@@ -36,6 +36,8 @@ export const WITHINGS_MEASURE_TYPES = {
   MUSCLE_MASS: 76,
   HYDRATION: 77,
   BONE_MASS: 88,
+  VO2MAX: 123,
+  VISCERAL_FAT: 170,
 } as const;
 
 export interface WithingsTokenResponse {

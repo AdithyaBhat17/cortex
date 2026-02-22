@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getValidToken } from "@/lib/api/token-manager";
 import { fetchMeasurements } from "@/lib/api/withings";
+import { calculateBmr, getAgeFromDob } from "@/lib/utils/bmr";
 import { subDays } from "date-fns";
 
 export async function syncWithings(
@@ -55,12 +56,31 @@ export async function syncWithings(
 
       let latestHeight = heightRow?.height_m ?? null;
 
+      // Fetch user profile for height fallback + BMR calculation
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("height_cm, date_of_birth, gender")
+        .eq("user_id", userId)
+        .single();
+
+      const profileHeightM = profile?.height_cm ? profile.height_cm / 100 : null;
+      const profileAge =
+        profile?.date_of_birth ? getAgeFromDob(profile.date_of_birth) : null;
+      const profileGender = profile?.gender as "male" | "female" | null;
+
       const rows = measurements.map((m) => {
-        // Use height from this measurement if available, otherwise use latest known
-        const height = m.height_m ?? latestHeight;
+        // Use height from this measurement if available, otherwise use latest known, then profile fallback
+        const height = m.height_m ?? latestHeight ?? profileHeightM;
         if (m.height_m) latestHeight = m.height_m;
 
         const bmi = m.weight_kg && height ? m.weight_kg / (height * height) : null;
+
+        // Calculate BMR when we have weight + profile data
+        let bmrKcal: number | null = null;
+        const heightCm = height ? height * 100 : profile?.height_cm ?? null;
+        if (m.weight_kg && heightCm && profileAge && profileGender) {
+          bmrKcal = calculateBmr(m.weight_kg, heightCm, profileAge, profileGender);
+        }
 
         return {
           user_id: userId,
@@ -76,6 +96,10 @@ export async function syncWithings(
           hydration_kg: m.hydration_kg,
           bone_mass_kg: m.bone_mass_kg,
           bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+          vo2max: m.vo2max,
+          visceral_fat: m.visceral_fat,
+          bmr_kcal: bmrKcal,
+          raw_json: m.raw_json,
         };
       });
 

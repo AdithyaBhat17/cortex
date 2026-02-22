@@ -10,6 +10,7 @@ import {
   ArrowRightStartOnRectangleIcon,
   Squares2X2Icon,
   LinkIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -29,6 +30,7 @@ export function Header() {
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: Squares2X2Icon },
     { label: "Connections", href: "/dashboard/connect", icon: LinkIcon },
+    { label: "Profile", href: "/dashboard/profile", icon: UserCircleIcon },
   ];
 
   return (

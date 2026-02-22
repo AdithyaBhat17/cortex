@@ -1,8 +1,10 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HeightInput } from "@/components/ui/height-input";
+import { useProfile, useUpdateProfile } from "@/lib/hooks/use-profile";
 import { useWithingsData } from "@/lib/hooks/use-withings-data";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const BMI_MIN = 15;
 const BMI_MAX = 40;
@@ -69,7 +71,7 @@ function BmiGauge({ bmi }: { bmi: number }) {
           return (
             <div
               key={zone.label}
-              className="flex flex-col items-center gap-1 rounded-md px-1 py-1.5"
+              className="flex flex-col items-center gap-1.5 rounded-md px-1 py-1.5"
               style={{
                 backgroundColor: isActive ? `${zone.color}15` : "transparent",
                 borderWidth: 1,
@@ -81,8 +83,8 @@ function BmiGauge({ bmi }: { bmi: number }) {
                 style={{ backgroundColor: zone.color, opacity: isActive ? 1 : 0.4 }}
               />
               <span
-                className="text-[8px] font-medium uppercase tracking-wider"
-                style={{ color: isActive ? zone.color : "var(--muted-foreground)", opacity: isActive ? 1 : 0.5 }}
+                className="text-[9px] font-medium uppercase tracking-wider"
+                style={{ color: isActive ? zone.color : "var(--muted-foreground)", opacity: isActive ? 1 : 0.7 }}
               >
                 {zone.label}
               </span>
@@ -94,27 +96,56 @@ function BmiGauge({ bmi }: { bmi: number }) {
   );
 }
 
+function InlineHeightPrompt() {
+  const updateProfile = useUpdateProfile();
+  const [heightCm, setHeightCm] = useState<number | null>(null);
+
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-xs text-muted-foreground">
+        Enter your height to calculate BMI:
+      </p>
+      <div className="flex items-center gap-2">
+        <HeightInput value={heightCm} onChange={setHeightCm} compact />
+        <button
+          onClick={() => {
+            if (heightCm) updateProfile.mutate({ height_cm: heightCm });
+          }}
+          disabled={!heightCm || updateProfile.isPending}
+          className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function BmiCard() {
   const { data, isLoading } = useWithingsData();
+  const { data: profile, isLoading: profileLoading } = useProfile();
 
-  const { bmi, source } = useMemo(() => {
-    if (!data?.length) return { bmi: null, source: "" };
+  const { bmi, source, hasWeightNoHeight } = useMemo(() => {
+    if (!data?.length) return { bmi: null, source: "", hasWeightNoHeight: false };
 
     const directBmi = data.filter((d) => d.bmi != null).at(-1)?.bmi;
-    if (directBmi) return { bmi: directBmi, source: "measured" };
+    if (directBmi) return { bmi: directBmi, source: "measured", hasWeightNoHeight: false };
 
     const latestWeight = data.filter((d) => d.weight_kg != null).at(-1)?.weight_kg;
     const latestHeight = data.filter((d) => d.height_m != null).at(-1)?.height_m;
 
-    if (latestWeight && latestHeight) {
-      const calculated = latestWeight / (latestHeight * latestHeight);
-      return { bmi: Math.round(calculated * 10) / 10, source: "calculated" };
+    // Use profile height as fallback
+    const heightM = latestHeight ?? (profile?.height_cm ? profile.height_cm / 100 : null);
+
+    if (latestWeight && heightM) {
+      const calculated = latestWeight / (heightM * heightM);
+      return { bmi: Math.round(calculated * 10) / 10, source: "calculated", hasWeightNoHeight: false };
     }
 
-    return { bmi: null, source: "" };
-  }, [data]);
+    return { bmi: null, source: "", hasWeightNoHeight: !!latestWeight && !heightM };
+  }, [data, profile]);
 
-  if (isLoading) {
+  if (isLoading || profileLoading) {
     return (
       <Card className="flex h-full flex-col justify-center animate-pulse">
         <div className="h-2.5 w-14 rounded bg-muted" />
@@ -130,13 +161,17 @@ export function BmiCard() {
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           Body Mass Index
         </p>
-        <p className="mt-4 text-sm text-muted-foreground">
-          No weight or height data available.
-          <br />
-          <span className="text-xs text-muted-foreground/60">
-            Connect Withings to track BMI.
-          </span>
-        </p>
+        {hasWeightNoHeight ? (
+          <InlineHeightPrompt />
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No weight or height data available.
+            <br />
+            <span className="text-xs text-muted-foreground/60">
+              Connect Withings to track BMI.
+            </span>
+          </p>
+        )}
       </Card>
     );
   }
@@ -148,7 +183,7 @@ export function BmiCard() {
       <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         Body Mass Index
         {source === "calculated" && (
-          <span className="ml-1.5 text-[9px] normal-case text-muted-foreground/50">
+          <span className="ml-1.5 text-[9px] normal-case text-muted-foreground/70">
             (calculated)
           </span>
         )}

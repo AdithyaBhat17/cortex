@@ -2,6 +2,7 @@
 
 import { useCycleData, useRecoveryData, useSleepData } from "@/lib/hooks/use-whoop-data";
 import { useWithingsData } from "@/lib/hooks/use-withings-data";
+import { useProfile } from "@/lib/hooks/use-profile";
 import { CHART_HEX } from "@/lib/utils/constants";
 import { useId, useMemo } from "react";
 
@@ -200,6 +201,7 @@ export function SummaryStrip() {
   const { data: sleep, isLoading: sl } = useSleepData();
   const { data: cycles, isLoading: cl } = useCycleData();
   const { data: withings, isLoading: wl } = useWithingsData();
+  const { data: profile } = useProfile();
 
   const recoveryScores = useMemo(
     () => recovery?.map((r) => r.recovery_score).filter((v): v is number => v != null) ?? [],
@@ -242,17 +244,18 @@ export function SummaryStrip() {
     if (direct.length > 0) return { bmiValues: direct, latestBmi: direct[direct.length - 1] };
 
     const latestHeight = withings?.filter((w) => w.height_m != null).at(-1)?.height_m;
-    if (!latestHeight) return { bmiValues: [] as number[], latestBmi: null };
+    const heightM = latestHeight ?? (profile?.height_cm ? profile.height_cm / 100 : null);
+    if (!heightM) return { bmiValues: [] as number[], latestBmi: null };
 
     const calculated = (withings ?? [])
       .filter((w) => w.weight_kg != null)
-      .map((w) => Math.round((w.weight_kg! / (latestHeight * latestHeight)) * 10) / 10);
+      .map((w) => Math.round((w.weight_kg! / (heightM * heightM)) * 10) / 10);
 
     return {
       bmiValues: calculated,
       latestBmi: calculated.length ? calculated[calculated.length - 1] : null,
     };
-  }, [withings]);
+  }, [withings, profile]);
 
   const fatValues = useMemo(
     () => withings?.filter((w) => w.fat_ratio_pct != null).map((w) => w.fat_ratio_pct!) ?? [],

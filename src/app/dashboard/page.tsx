@@ -15,6 +15,7 @@ import { CaloriesChart } from "@/components/charts/calories-chart";
 import { WeightChart } from "@/components/charts/weight-chart";
 import { BodyCompChart } from "@/components/charts/body-comp-chart";
 import { BmiCard } from "@/components/charts/bmi-card";
+import { BmrCard } from "@/components/charts/bmr-card";
 import { WorkoutChart } from "@/components/charts/workout-chart";
 import { WorkoutHrChart } from "@/components/charts/workout-hr-chart";
 
@@ -84,7 +85,10 @@ export default function DashboardPage() {
           <div className="md:col-span-2">
             <BodyCompChart />
           </div>
-          <BmiCard />
+          <div className="flex flex-col gap-3">
+            <BmiCard />
+            <BmrCard />
+          </div>
         </div>
       </section>
     </div>

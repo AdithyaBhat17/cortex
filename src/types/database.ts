@@ -99,7 +99,21 @@ export interface DbWithingsMeasurement {
   hydration_kg: number | null;
   bone_mass_kg: number | null;
   bmi: number | null;
+  vo2max: number | null;
+  visceral_fat: number | null;
+  bmr_kcal: number | null;
+  raw_json: unknown | null;
   synced_at: string;
+}
+
+export interface DbUserProfile {
+  id: string;
+  user_id: string;
+  height_cm: number | null;
+  date_of_birth: string | null;
+  gender: "male" | "female" | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DbSyncLog {

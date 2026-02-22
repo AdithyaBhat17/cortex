@@ -20,6 +20,9 @@ export interface ParsedMeasurement {
   muscle_mass_kg: number | null;
   hydration_kg: number | null;
   bone_mass_kg: number | null;
+  vo2max: number | null;
+  visceral_fat: number | null;
+  raw_json: unknown;
 }
 
 export async function fetchMeasurements(
@@ -77,6 +80,9 @@ export async function fetchMeasurements(
         muscle_mass_kg: null,
         hydration_kg: null,
         bone_mass_kg: null,
+        vo2max: null,
+        visceral_fat: null,
+        raw_json: grp,
       };
 
       for (const m of grp.measures) {
@@ -105,6 +111,12 @@ export async function fetchMeasurements(
             break;
           case WITHINGS_MEASURE_TYPES.BONE_MASS:
             parsed.bone_mass_kg = actual;
+            break;
+          case WITHINGS_MEASURE_TYPES.VO2MAX:
+            parsed.vo2max = actual;
+            break;
+          case WITHINGS_MEASURE_TYPES.VISCERAL_FAT:
+            parsed.visceral_fat = Math.round(actual);
             break;
         }
       }
