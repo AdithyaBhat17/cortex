@@ -7,8 +7,8 @@ Your biometric command center. WHOOP + Withings in one dashboard.
    / ____/ __ \|  _ \|_   _|  ____\ \/ /
   | |   | |  | | |_) | | | | |__   \  /
   | |   | |  | |  _ <  | | |  __|  /  \
-  | |___| |__| | |_) | | | | |____/ /\ \
-   \_____\____/|____/ |___|______/_/  \_\
+  | |___| |__| | |) | | | | |____/ /\ \
+   \_____\____/|     / |___|______/_/  \_\
 ```
 
 Cortex aggregates health data from **WHOOP** (recovery, strain, sleep, heart rate, SpO2, skin temperature, respiratory rate) and **Withings** (weight, body composition, BMI) into a unified, real-time dashboard with interactive charts and trend analysis.
