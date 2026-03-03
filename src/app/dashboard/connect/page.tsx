@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useConnections } from "@/lib/hooks/use-connections";
+import { useConnections, useDisconnect } from "@/lib/hooks/use-connections";
 import { useSync } from "@/lib/hooks/use-sync";
 import { useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
@@ -40,6 +40,7 @@ function WithingsLogo({ className }: { className?: string }) {
 
 function ConnectPageContent() {
   const { data: connections, isLoading, isError } = useConnections();
+  const disconnect = useDisconnect();
   const sync = useSync();
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
@@ -138,9 +139,13 @@ function ConnectPageContent() {
                     <span className="text-xs text-muted-foreground">
                       Connected {provider.connectedAt ? formatDateFull(provider.connectedAt) : ""}
                     </span>
-                    <span className="rounded-md bg-teal/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-teal">
-                      Active
-                    </span>
+                    <button
+                      onClick={() => disconnect.mutate(provider.id)}
+                      disabled={disconnect.isPending}
+                      className="rounded-md bg-chart-red/10 px-2.5 py-1 text-[11px] font-medium text-chart-red transition-opacity hover:opacity-80 disabled:opacity-50"
+                    >
+                      {disconnect.isPending ? "Disconnecting…" : "Disconnect"}
+                    </button>
                   </div>
                 ) : isError ? (
                   <p className="text-xs text-chart-red" role="alert">

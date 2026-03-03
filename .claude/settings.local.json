@@ -20,7 +20,9 @@
       "Bash(npm list -g pa11y 2>&1 || npx pa11y --version 2>&1)",
       "Bash(npx pa11y:*)",
       "Bash(cd F:/cortex && npx eslint --no-warn-ignored src/app/dashboard/page.tsx src/app/dashboard/profile/page.tsx src/components/charts/bmi-card.tsx src/components/charts/bmr-card.tsx src/components/ui/height-input.tsx src/components/layout/summary-strip.tsx src/components/layout/header.tsx 2>&1)",
-      "Bash(cd F:/cortex && npx eslint --no-warn-ignored src/app/dashboard/page.tsx src/app/dashboard/profile/page.tsx src/components/charts/bmi-card.tsx src/components/charts/bmr-card.tsx src/components/ui/height-input.tsx src/components/layout/summary-strip.tsx src/components/layout/header.tsx src/components/charts/*.tsx src/components/layout/*.tsx 2>&1)"
+      "Bash(cd F:/cortex && npx eslint --no-warn-ignored src/app/dashboard/page.tsx src/app/dashboard/profile/page.tsx src/components/charts/bmi-card.tsx src/components/charts/bmr-card.tsx src/components/ui/height-input.tsx src/components/layout/summary-strip.tsx src/components/layout/header.tsx src/components/charts/*.tsx src/components/layout/*.tsx 2>&1)",
+      "Bash(npx vercel:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

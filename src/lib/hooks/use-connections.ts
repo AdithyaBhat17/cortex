@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ConnectionInfo {
   provider: string;
@@ -20,6 +20,22 @@ export function useConnections() {
       const res = await fetch("/api/data/connections");
       if (!res.ok) throw new Error("Failed to fetch connections");
       return res.json();
+    },
+  });
+}
+
+export function useDisconnect() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (provider: "whoop" | "withings") => {
+      const res = await fetch(`/api/data/connections?provider=${provider}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to disconnect");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connections"] });
     },
   });
 }

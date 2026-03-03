@@ -20,20 +20,28 @@ export async function getValidToken(
     .eq("provider", provider)
     .single();
 
-  if (!token) return null;
+  if (!token) {
+    console.error(`[token-manager] No ${provider} token found for user ${userId}`);
+    return null;
+  }
 
   const expiresAt = new Date(token.expires_at);
   const now = new Date();
-  const fiveMinutes = 5 * 60 * 1000;
+  const tenMinutes = 10 * 60 * 1000;
 
   // Token is still valid
-  if (expiresAt.getTime() - now.getTime() > fiveMinutes) {
+  if (expiresAt.getTime() - now.getTime() > tenMinutes) {
     return token.access_token;
   }
 
   // Token needs refresh
   const refreshed = await refreshToken(provider, token.refresh_token);
-  if (!refreshed) return null;
+  if (!refreshed) {
+    console.error(
+      `[token-manager] Failed to refresh ${provider} token for user ${userId} (expired at ${expiresAt.toISOString()})`
+    );
+    return null;
+  }
 
   // Update stored tokens
   await supabase
@@ -72,7 +80,11 @@ async function refreshWhoopToken(refresh_token: string): Promise<TokenData | nul
     }),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[token-manager] Whoop token refresh failed: HTTP ${res.status} — ${body}`);
+    return null;
+  }
 
   const data = await res.json();
   return {
@@ -95,10 +107,20 @@ async function refreshWithingsToken(refresh_token: string): Promise<TokenData | 
     }),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[token-manager] Withings token refresh failed: HTTP ${res.status} — ${body}`);
+    return null;
+  }
 
   const data = await res.json();
-  if (data.status !== 0) return null;
+  if (data.status !== 0) {
+    console.error(
+      `[token-manager] Withings token refresh error: status=${data.status}`,
+      JSON.stringify(data)
+    );
+    return null;
+  }
 
   return {
     access_token: data.body.access_token,
@@ -126,6 +148,84 @@ export async function storeTokens(
     },
     { onConflict: "user_id,provider" }
   );
+}
+
+export interface TokenRefreshResult {
+  user_id: string;
+  provider: string;
+  status: "fresh" | "refreshed" | "failed";
+  error?: string;
+}
+
+export async function refreshAllTokens(
+  supabase: SupabaseClient
+): Promise<TokenRefreshResult[]> {
+  const { data: tokens, error } = await supabase
+    .from("oauth_tokens")
+    .select("*");
+
+  if (error || !tokens) {
+    console.error("[token-manager] Failed to fetch tokens for refresh:", error);
+    return [];
+  }
+
+  const sixHours = 6 * 60 * 60 * 1000;
+  const now = Date.now();
+  const results: TokenRefreshResult[] = [];
+
+  // Process sequentially to avoid race conditions with single-use refresh tokens
+  for (const token of tokens) {
+    const expiresAt = new Date(token.expires_at).getTime();
+    const provider = token.provider as "whoop" | "withings";
+
+    if (expiresAt - now > sixHours) {
+      results.push({ user_id: token.user_id, provider, status: "fresh" });
+      continue;
+    }
+
+    console.log(
+      `[token-manager] Proactively refreshing ${provider} token for user ${token.user_id} (expires ${token.expires_at})`
+    );
+
+    const refreshed = await refreshToken(provider, token.refresh_token);
+    if (!refreshed) {
+      results.push({
+        user_id: token.user_id,
+        provider,
+        status: "failed",
+        error: "Refresh returned null",
+      });
+      continue;
+    }
+
+    const { error: updateError } = await supabase
+      .from("oauth_tokens")
+      .update({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token,
+        expires_at: refreshed.expires_at.toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", token.user_id)
+      .eq("provider", provider);
+
+    if (updateError) {
+      console.error(
+        `[token-manager] Failed to store refreshed ${provider} token for user ${token.user_id}:`,
+        updateError
+      );
+      results.push({
+        user_id: token.user_id,
+        provider,
+        status: "failed",
+        error: "DB update failed",
+      });
+    } else {
+      results.push({ user_id: token.user_id, provider, status: "refreshed" });
+    }
+  }
+
+  return results;
 }
 
 export async function removeTokens(
