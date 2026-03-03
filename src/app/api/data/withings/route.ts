@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { syncWithings } from "@/lib/sync/withings-sync";
 import { NextRequest, NextResponse } from "next/server";
 
-const STALE_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+const STALE_THRESHOLD_MS = 18 * 60 * 60 * 1000; // 18 hours
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
