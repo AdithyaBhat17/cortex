@@ -2,23 +2,30 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getValidToken } from "@/lib/api/token-manager";
 import { fetchMeasurements } from "@/lib/api/withings";
 import { calculateBmr, getAgeFromDob } from "@/lib/utils/bmr";
-import { subDays } from "date-fns";
+import { subDays, subHours } from "date-fns";
 
 export async function syncWithings(
   supabase: SupabaseClient,
   userId: string,
   initialSync = false
 ): Promise<{ success: boolean; records: number; error?: string }> {
-  const accessToken = await getValidToken(supabase, userId, "withings");
-  if (!accessToken) {
-    return { success: false, records: 0, error: "No valid token" };
-  }
-
+  // Create sync_log entry before anything else so every invocation is tracked
   const { data: logEntry } = await supabase
     .from("sync_log")
     .insert({ user_id: userId, provider: "withings", status: "started" })
     .select("id")
     .single();
+
+  const accessToken = await getValidToken(supabase, userId, "withings");
+  if (!accessToken) {
+    if (logEntry) {
+      await supabase
+        .from("sync_log")
+        .update({ status: "failed", error_message: "No valid token", completed_at: new Date().toISOString() })
+        .eq("id", logEntry.id);
+    }
+    return { success: false, records: 0, error: "No valid token" };
+  }
 
   try {
     let startDate: Date;
@@ -35,8 +42,11 @@ export async function syncWithings(
         .limit(1)
         .single();
 
+      // Use a 1-hour overlap buffer to avoid missing measurements that were
+      // still processing on the Withings side when the previous sync ran.
+      // Duplicates are handled by the upsert's onConflict clause.
       startDate = lastSync?.completed_at
-        ? new Date(lastSync.completed_at)
+        ? subHours(new Date(lastSync.completed_at), 1)
         : subDays(new Date(), 30);
     }
 

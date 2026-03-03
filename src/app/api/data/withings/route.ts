@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { syncWithings } from "@/lib/sync/withings-sync";
 import { NextRequest, NextResponse } from "next/server";
+
+const STALE_THRESHOLD_MS = 18 * 60 * 60 * 1000; // 18 hours
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -20,6 +23,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Trigger a sync if the last successful one is older than the threshold
+    const { data: lastSync } = await supabase
+      .from("sync_log")
+      .select("completed_at")
+      .eq("user_id", user.id)
+      .eq("provider", "withings")
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    const lastSyncTime = lastSync?.completed_at
+      ? new Date(lastSync.completed_at).getTime()
+      : 0;
+
+    if (Date.now() - lastSyncTime > STALE_THRESHOLD_MS) {
+      await syncWithings(supabase, user.id);
+    }
+
     const { data, error } = await supabase
       .from("withings_measurements")
       .select("*")
