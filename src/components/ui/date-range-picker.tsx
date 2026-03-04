@@ -43,7 +43,7 @@ export function DateRangePicker() {
 
   return (
     <div
-      className="flex items-center gap-0.5 overflow-x-auto rounded-md bg-muted p-0.5"
+      className="relative flex items-center gap-0.5 rounded-md bg-muted p-0.5"
       role="group"
       aria-label="Date range selection"
     >
@@ -66,29 +66,28 @@ export function DateRangePicker() {
         </button>
       ))}
 
-      <div className="relative shrink-0">
-        <button
-          onClick={() => setShowCustom(!showCustom)}
-          aria-pressed={activeLabel === "Custom"}
-          aria-expanded={showCustom}
-          aria-label={activeLabel === "Custom" ? `Custom range: ${format(startDate, "MMM d")} to ${format(endDate, "MMM d")}` : "Select custom date range"}
-          className={cn(
-            "rounded-[5px] p-1 transition-colors duration-150",
-            activeLabel === "Custom"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <CalendarDaysIcon className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
+      <button
+        onClick={() => setShowCustom(!showCustom)}
+        aria-pressed={activeLabel === "Custom"}
+        aria-expanded={showCustom}
+        aria-label={activeLabel === "Custom" ? `Custom range: ${format(startDate, "MMM d")} to ${format(endDate, "MMM d")}` : "Select custom date range"}
+        className={cn(
+          "shrink-0 rounded-[5px] p-1 transition-colors duration-150",
+          activeLabel === "Custom"
+            ? "bg-foreground text-background"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <CalendarDaysIcon className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
 
-        {showCustom && (
-          <div
-            ref={popoverRef}
-            role="dialog"
-            aria-label="Custom date range"
-            className="card-panel absolute right-0 top-full z-50 mt-2 w-60 p-4"
-          >
+      {showCustom && (
+        <div
+          ref={popoverRef}
+          role="dialog"
+          aria-label="Custom date range"
+          className="card-panel absolute right-0 top-full z-50 mt-2 w-60 p-4"
+        >
           <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Custom range
           </p>
@@ -127,9 +126,8 @@ export function DateRangePicker() {
               Apply
             </button>
           </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
